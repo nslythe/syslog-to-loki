@@ -5,7 +5,6 @@ import socketserver
 import re
 import os
 import queue
-import signal
 
 LISTEN_ADDRESS = os.getenv("LISTEN_ADDRESS", "0.0.0.0:514")
 CONSOLE_LOG = os.getenv("DISABLE_CONSOLE_LOG") is None
@@ -80,12 +79,7 @@ class QueueProcessor(threading.Thread):
             except:
                 pass
 
-def handle_signel(signal, frame):
-    print("signal")
-
 def main():
-    signal.signal(signal.SIGTERM, handle_signel)
-    signal.signal(signal.SIGINT, handle_signel)
     if LOKI_URL is None:
         logging.getLogger().error(f"LOKI_URL not defined")
         return
