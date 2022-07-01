@@ -1,21 +1,19 @@
 import logging
-import multiprocessing
+import threading
 import lokihandler
 import socketserver
 import re
 import os
+import queue
+import signal
 
 LISTEN_ADDRESS = os.getenv("LISTEN_ADDRESS", "0.0.0.0:514")
-CONSOLE_LOG = os.getenv("CONSOLE_LOG", "1")
-if CONSOLE_LOG == "1":
-    CONSOLE_LOG = True
-else:
-    CONSOLE_LOG = False
+CONSOLE_LOG = os.getenv("DISABLE_CONSOLE_LOG") is None
 MESSAGE_REGEX = os.getenv("MESSAGE_REGEX", None)
 LOKI_URL = os.getenv("LOKI_URL", None)
 
 def create_logger():
-    logger = logging.getLogger()
+    logger = logging.getLogger("syslog-to-loki")
     logger.setLevel(logging.INFO)
 
     loki_handler = lokihandler.LokiHandler(
@@ -30,65 +28,92 @@ def create_logger():
         logger.addHandler(console_handler)
     return logger
 
-logger = create_logger()
-queue = multiprocessing.Queue(-1)
-sys_log_format_regex = re.compile("\<(?P<priority>\d+)\>(?P<version>\d+) (?P<time>\S*) (?P<host>\S*) (?P<application>\S*) (?P<process_id>\S*) (?P<message_id>\S*) ((?P<structure_data>\[.*\])+|-) (?P<msg>.*)")        
-custom_regex = None
-if not MESSAGE_REGEX is None:
-    custom_regex = re.compile(MESSAGE_REGEX)
+queue = queue.Queue(-1)
 
 class SyslogUDPHandler(socketserver.BaseRequestHandler):
     def handle(self):
+        logging.getLogger().debug(f"Received packet")
         data = bytes.decode(self.request[0].strip())
         queue.put(data, block = True)
 
-def process_queue(queue):
-    stop = False
-    while not stop:
-        try:
-            data = queue.get(block=True)
+class QueueProcessor(threading.Thread):
+    def __init__(self, queue, logger):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.logger = logger
+        self.sys_log_format_regex = re.compile("\<(?P<priority>\d+)\>(?P<version>\d+) (?P<time>\S*) (?P<host>\S*) (?P<application>\S*) (?P<process_id>\S*) (?P<message_id>\S*) ((?P<structure_data>\[.*\])+|-) (?P<msg>.*)")        
+        self.custom_regex = None
+        if not MESSAGE_REGEX is None:
+            self.custom_regex = re.compile(MESSAGE_REGEX)
+        self.do_stop = False
 
-            match = sys_log_format_regex.match(data)
+    def stop(self):
+        self.do_stop = True
 
-            tag_dict = match.groupdict()
-            msg = tag_dict["msg"]
-            del tag_dict["msg"]
+    def run(self):
+        while not self.do_stop:
+            try:
+                data = self.queue.get(block=True, timeout=1)
+                if data is None:
+                    continue
 
-            if not custom_regex is None:
-                msg_match = custom_regex.match(msg)
-                if not msg_match is None:
-                    custom_tag_dict = msg_match.groupdict()
-                    tag_dict.update(custom_tag_dict)
-                else:
-                    logger.error("MESSAGE_REGEX does not match")
+                self.queue.task_done()
+
+                match = self.sys_log_format_regex.match(data)
+
+                tag_dict = match.groupdict()
+                msg = tag_dict["msg"]
+                del tag_dict["msg"]
+
+                if not self.custom_regex is None:
+                    msg_match = self.custom_regex.match(msg)
+                    if not msg_match is None:
+                        custom_tag_dict = msg_match.groupdict()
+                        tag_dict.update(custom_tag_dict)
+                    else:
+                        self.logger.error("MESSAGE_REGEX does not match")
                 
-            logger.info(
-                data,
-                extra={"tags" : tag_dict}
-            )
-        except ValueError: # Queue closed
-            stop = True
-        except KeyboardInterrupt:
-            stop = True
+                self.logger.info(
+                    data,
+                    extra={"tags" : tag_dict}
+                )
+            except:
+                pass
+
+def handle_signel(signal, frame):
+    print("signal")
 
 def main():
-    try:
-        ip = LISTEN_ADDRESS.split(":")[0]
-        try:
-            port = LISTEN_ADDRESS.split(":")[1]
-        except:
-            port = "514"
+    signal.signal(signal.SIGTERM, handle_signel)
+    signal.signal(signal.SIGINT, handle_signel)
+    if LOKI_URL is None:
+        logging.getLogger().error(f"LOKI_URL not defined")
+        return
 
-        p = multiprocessing.Process(target=process_queue, args=(queue,))
-        p.start()
+    logger = create_logger()
+
+    ip = LISTEN_ADDRESS.split(":")[0]
+    try:
+        port = LISTEN_ADDRESS.split(":")[1]
+    except:
+        port = "514"
+
+    try:
+        logging.getLogger().debug(f"Create queue processor")
+        queue_processor = QueueProcessor(queue, logger)
+        queue_processor.start()
+
+        logging.getLogger().debug(f"Create UDP server")
         server = socketserver.UDPServer((ip, int(port)), SyslogUDPHandler)
         server.serve_forever(poll_interval=0.5)
-
     except (IOError, SystemExit):
         raise
 
     except KeyboardInterrupt:
-        p.join()
+        server.shutdown()
+        queue.join()
+        queue_processor.stop()
+        queue_processor.join()
 
 if __name__ == "__main__":
     main()
