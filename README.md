@@ -27,19 +27,19 @@ docker run -p 514:514/udp -e LOKI_URL=http://loki:3100/loki/api/v1/push ghcr.io/
 
 # env variable
 #### LOKI_URL
-The url of your loki server, this variable is mandatory.
+The url of your loki server, this variable is mandatory.  
 Ex: http://loki:3100/loki/api/v1/push
 #### LISTEN_PORT
-Default value : 514
+Default value : 514.
 #### DISABLE_CONSOLE_LOG
-If the env varuiable is set no log will be outputed to the console
+If the env varuiable is set no log will be outputed to the console.  
 Default this value is not set.
 #### MESSAGE_REGEX
-Regex to parse the message section of the sys-log
-Default this value is empty
+Regex to parse the message section of the sys-log.  
+Default this value is empty.
 
 # regex example (MESSAGE_REGEX)
-- pfsense
+- pfsense  
 Check [this configuration](doc/pfsense.md) for more detail
 ```
 (?P<rule_number>[^,]*),(?P<sub_rule_number>[^,]*),(?P<anchor>[^,]*),(?P<tracker>[^,]*),(?P<interface>[^,]*),(?P<reason>[^,]*),(?P<action>[^,]*),(?P<direction>[^,]*),(?P<ip_version>[^,]*),(?P<tos>[^,]*),(?P<ecn>[^,]*),(?P<ttl>[^,]*),(?P<id>[^,]*),(?P<offset>[^,]*),(?P<flags>[^,]*),(?P<protocol_id>[^,]*),(?P<protocol>[^,]*),(?P<length>[^,]*),(?P<source_ip>[^,]*),(?P<destination_ip>[^,]*)
