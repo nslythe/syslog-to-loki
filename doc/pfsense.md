@@ -1,3 +1,7 @@
+Using the doc in this page you will be able to configure pfsense and syslog-to-loki to receive pfsense log in loki.
+As describe in this [documentation](https://docs.netgate.com/pfsense/en/latest/monitoring/logs/raw-filter-format.html) pfsense filterlog contains thos values, they will be extracted from the log and disponible in loki:
+rule_number, sub_rule_number, anchor, tracker, interface, reason, action, direction, ip_version, tos, ecn, ttl, id, offset, flags, protocol_id, protocol, length, source_ip, destination_ip
+
 # configur pfsense
 In pfsense web gui go to : status -> system logs -> settings
 - Enable remote logging
