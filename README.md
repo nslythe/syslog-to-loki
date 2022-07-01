@@ -45,3 +45,4 @@ Default this value is empty
 
 
 # TODO
+- [ ] Support BOM for UTF-8 encoded message
