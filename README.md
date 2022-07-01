@@ -3,7 +3,7 @@ Python server listening for syslog and sendiong them to loki server.
 I wrote this server in replacement of syslog-ng and promtail combo. I found this solution dificult to understand.
 I use this solution with pfsense and loki. To see my solution I wrote a page explaining how to configure syslog-to-loki with pfsense.
 
-https://datatracker.ietf.org/doc/html/rfc5424
+This syslog server is targeted to support [rfc5424](https://datatracker.ietf.org/doc/html/rfc5424)
 
 # Running
 ## docker
