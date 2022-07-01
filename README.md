@@ -37,8 +37,10 @@ Default this value is not set.
 #### MESSAGE_REGEX
 Regex to parse the message section of the sys-log
 Default this value is empty
-##### Regex example
+
+# Regex example to use as MESSAGE_REGEX
 - pfsense
+Check [this configuration[(doc/pfsense) for more detail
 ```
 (?P<rule_number>[^,]*),(?P<sub_rule_number>[^,]*),(?P<anchor>[^,]*),(?P<tracker>[^,]*),(?P<interface>[^,]*),(?P<reason>[^,]*),(?P<action>[^,]*),(?P<direction>[^,]*),(?P<ip_version>[^,]*),(?P<tos>[^,]*),(?P<ecn>[^,]*),(?P<ttl>[^,]*),(?P<id>[^,]*),(?P<offset>[^,]*),(?P<flags>[^,]*),(?P<protocol_id>[^,]*),(?P<protocol>[^,]*),(?P<length>[^,]*),(?P<source_ip>[^,]*),(?P<destination_ip>[^,]*)
 ```
