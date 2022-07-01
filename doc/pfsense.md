@@ -1,5 +1,4 @@
-# configuration with pfsense
-## pfsense
+# configur pfsense
 Go to : status -> system logs -> settings
 - Enable remote logging
 - Configure addres for the remote log server to the address of the server where syslog-to-loki is running
@@ -7,7 +6,7 @@ Go to : status -> system logs -> settings
 
 ![pfsense screenshot](pfsense_config.png)
 
-Run syslog-to-loki
+# Run syslog-to-loki
 Don't forget to configure env variable LOKI_URL to your loki server address
 ```
   syslog-to-loki:
