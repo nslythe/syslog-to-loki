@@ -6,7 +6,7 @@ import re
 import os
 import queue
 
-LISTEN_ADDRESS = os.getenv("LISTEN_ADDRESS", "0.0.0.0:514")
+LISTEN_PORT = os.getenv("LISTEN_PORT", "514")
 CONSOLE_LOG = os.getenv("DISABLE_CONSOLE_LOG") is None
 MESSAGE_REGEX = os.getenv("MESSAGE_REGEX", None)
 LOKI_URL = os.getenv("LOKI_URL", None)
@@ -86,11 +86,8 @@ def main():
 
     logger = create_logger()
 
-    ip = LISTEN_ADDRESS.split(":")[0]
-    try:
-        port = LISTEN_ADDRESS.split(":")[1]
-    except:
-        port = "514"
+    ip = "0.0.0.0"
+    port = int(LISTEN_PORT)
 
     try:
         logging.getLogger().debug(f"Create queue processor")
@@ -98,7 +95,7 @@ def main():
         queue_processor.start()
 
         logging.getLogger().debug(f"Create UDP server")
-        server = socketserver.UDPServer((ip, int(port)), SyslogUDPHandler)
+        server = socketserver.UDPServer((ip, port), SyslogUDPHandler)
         server.serve_forever(poll_interval=0.5)
     except (IOError, SystemExit):
         raise
