@@ -4,9 +4,9 @@ I wrote this server in replacement of syslog-ng and promtail combo. I found this
 I use this solution with pfsense and loki. To see my solution I wrote a page explaining how to configure syslog-to-loki with pfsense.
 
 This syslog server is targeted to support [rfc5424](https://datatracker.ietf.org/doc/html/rfc5424)
-The section [TODO](#todo) contains task planned to achieve this goal.
+The section [todo](#todo) contains task planned to achieve this goal.
 
-# Running
+# running
 ## docker
 ```
 docker run -p 514:514/udp -e LOKI_URL=http://loki:3100/loki/api/v1/push ghcr.io/nslythe/syslog-to-loki
@@ -25,7 +25,7 @@ docker run -p 514:514/udp -e LOKI_URL=http://loki:3100/loki/api/v1/push ghcr.io/
       - DISABLE_CONSOLE_LOG=1
 ```
 
-# Env variable
+# env variable
 #### LOKI_URL
 The url of your loki server, this variable is mandatory.
 Ex: http://loki:3100/loki/api/v1/push
@@ -44,5 +44,5 @@ Default this value is empty
 ```
 
 
-# TODO
+# todo
 - [ ] Support BOM for UTF-8 encoded message
