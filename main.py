@@ -8,7 +8,12 @@ import queue
 
 LISTEN_PORT = os.getenv("LISTEN_PORT", "514")
 CONSOLE_LOG = os.getenv("DISABLE_CONSOLE_LOG") is None
-MESSAGE_REGEX = os.getenv("MESSAGE_REGEX", None)
+
+MESSAGE_REGEXS = []
+for e in os.environ.keys():
+    if e.startswith("MESSAGE_REGEX"):
+        MESSAGE_REGEXS.append(os.environ[e])
+
 LOKI_URL = os.getenv("LOKI_URL", None)
 
 def create_logger():
@@ -41,9 +46,9 @@ class QueueProcessor(threading.Thread):
         self.queue = queue
         self.logger = logger
         self.sys_log_format_regex = re.compile("\<(?P<priority>\d+)\>(?P<version>\d+) (?P<time>\S*) (?P<host>\S*) (?P<application>\S*) (?P<process_id>\S*) (?P<message_id>\S*) ((?P<structure_data>\[.*\])+|-) (?P<msg>.*)")        
-        self.custom_regex = None
-        if not MESSAGE_REGEX is None:
-            self.custom_regex = re.compile(MESSAGE_REGEX)
+        self.custom_regexs = []
+        for m in  MESSAGE_REGEXS:
+            self.custom_regexs.append(re.compile(m))
         self.do_stop = False
 
     def stop(self):
@@ -64,13 +69,11 @@ class QueueProcessor(threading.Thread):
                 msg = tag_dict["msg"]
                 del tag_dict["msg"]
 
-                if not self.custom_regex is None:
-                    msg_match = self.custom_regex.match(msg)
+                for r in self.custom_regexs:
+                    msg_match = r.search(msg)
                     if not msg_match is None:
                         custom_tag_dict = msg_match.groupdict()
                         tag_dict.update(custom_tag_dict)
-                    else:
-                        self.logger.error("MESSAGE_REGEX does not match")
                 
                 self.logger.info(
                     data,
